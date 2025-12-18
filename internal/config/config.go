@@ -1,70 +1,36 @@
-// Package config provides configuration loading for producer and consumer.
-// Configuration is loaded from environment variables using the env library.
+// Package config provides configuration loading from environment variables.
+//
+// YOUR TASK (Milestone 2):
+// Define config structs and implement loading using github.com/caarlos0/env/v11
 package config
 
-import (
-	"fmt"
+// TODO: Import "github.com/caarlos0/env/v11"
 
-	"github.com/caarlos0/env/v11"
-)
+// ProducerConfig holds configuration for the event producer.
+//
+// TODO: Define struct with env tags:
+// - Brokers     []string      `env:"KAFKA_BROKERS" envSeparator:"," envDefault:"localhost:9092"`
+// - Topic       string        `env:"KAFKA_TOPIC" envDefault:"events.main"`
+// - RatePerSec  int           `env:"RATE_PER_SEC" envDefault:"100"`
+// - HotKeyPct   float64       `env:"HOT_KEY_PCT" envDefault:"0.8"`
+// - Duration    time.Duration `env:"DURATION" envDefault:"60s"`
 
-// Producer holds configuration for the event producer.
-type Producer struct {
-	// KafkaBrokers is a list of Kafka broker addresses.
-	KafkaBrokers []string `env:"KAFKA_BROKERS" envSeparator:"," envDefault:"localhost:9092"`
+// ConsumerConfig holds configuration for the event consumer.
+//
+// TODO: Define struct with env tags:
+// - Brokers     []string `env:"KAFKA_BROKERS" envSeparator:"," envDefault:"localhost:9092"`
+// - Topic       string   `env:"KAFKA_TOPIC" envDefault:"events.main"`
+// - GroupID     string   `env:"KAFKA_GROUP_ID" envDefault:"streamsre-consumer"`
+// - MaxInflight int      `env:"MAX_INFLIGHT" envDefault:"64"`
+// - DatabaseURL string   `env:"DATABASE_URL" envDefault:"postgres://streamsre:streamsre@localhost:5432/streamsre?sslmode=disable"`
+// - MetricsAddr string   `env:"METRICS_ADDR" envDefault:":2112"`
 
-	// KafkaTopic is the topic to produce events to.
-	KafkaTopic string `env:"KAFKA_TOPIC" envDefault:"reviews"`
+// LoadProducer parses ProducerConfig from environment.
+//
+// TODO: Implement using env.Parse()
+// func LoadProducer() (*ProducerConfig, error)
 
-	// LogLevel sets the logging verbosity (debug, info, warn, error).
-	LogLevel string `env:"LOG_LEVEL" envDefault:"info"`
-
-	// EventIntervalMs is the interval between generated events in milliseconds.
-	EventIntervalMs int `env:"EVENT_INTERVAL_MS" envDefault:"1000"`
-}
-
-// Consumer holds configuration for the event consumer.
-type Consumer struct {
-	// KafkaBrokers is a list of Kafka broker addresses.
-	KafkaBrokers []string `env:"KAFKA_BROKERS" envSeparator:"," envDefault:"localhost:9092"`
-
-	// KafkaTopic is the topic to consume events from.
-	KafkaTopic string `env:"KAFKA_TOPIC" envDefault:"reviews"`
-
-	// KafkaGroupID is the consumer group ID.
-	KafkaGroupID string `env:"KAFKA_GROUP_ID" envDefault:"streamsre-consumer"`
-
-	// DatabaseURL is the Postgres connection string.
-	DatabaseURL string `env:"DATABASE_URL" envDefault:"postgres://streamsre:streamsre@localhost:5432/streamsre?sslmode=disable"`
-
-	// MetricsPort is the port for the metrics and health HTTP server.
-	MetricsPort int `env:"METRICS_PORT" envDefault:"2112"`
-
-	// LogLevel sets the logging verbosity (debug, info, warn, error).
-	LogLevel string `env:"LOG_LEVEL" envDefault:"info"`
-
-	// MaxRetries is the maximum number of retries for failed event processing.
-	MaxRetries int `env:"MAX_RETRIES" envDefault:"3"`
-
-	// RetryBackoffMs is the initial backoff duration in milliseconds for retries.
-	RetryBackoffMs int `env:"RETRY_BACKOFF_MS" envDefault:"100"`
-}
-
-// LoadProducer loads producer configuration from environment variables.
-func LoadProducer() (*Producer, error) {
-	cfg := &Producer{}
-	if err := env.Parse(cfg); err != nil {
-		return nil, fmt.Errorf("parsing producer config: %w", err)
-	}
-	return cfg, nil
-}
-
-// LoadConsumer loads consumer configuration from environment variables.
-func LoadConsumer() (*Consumer, error) {
-	cfg := &Consumer{}
-	if err := env.Parse(cfg); err != nil {
-		return nil, fmt.Errorf("parsing consumer config: %w", err)
-	}
-	return cfg, nil
-}
-
+// LoadConsumer parses ConsumerConfig from environment.
+//
+// TODO: Implement using env.Parse()
+// func LoadConsumer() (*ConsumerConfig, error)

@@ -1,67 +1,40 @@
 // Package kafka provides Kafka producer functionality.
+//
+// YOUR TASK (Milestone 4):
+// Implement a Kafka producer using github.com/segmentio/kafka-go
 package kafka
 
-import (
-	"context"
+// TODO: Import required packages:
+// - "context"
+// - "github.com/segmentio/kafka-go"
+// - "streamsre/internal/event"
 
-	"streamsre/internal/event"
-)
-
-// ProducerConfig holds configuration for the Kafka producer.
-type ProducerConfig struct {
-	// Brokers is the list of Kafka broker addresses.
-	Brokers []string
-
-	// Topic is the topic to produce messages to.
-	Topic string
-
-	// BatchSize is the number of messages to batch before sending.
-	BatchSize int
-
-	// BatchTimeoutMs is the maximum time to wait before sending a batch.
-	BatchTimeoutMs int
-}
-
-// Producer publishes events to Kafka.
-type Producer interface {
-	// Publish sends a single event to Kafka.
-	Publish(ctx context.Context, event *event.ReviewEvent) error
-
-	// PublishBatch sends multiple events to Kafka.
-	PublishBatch(ctx context.Context, events []*event.ReviewEvent) error
-
-	// Close closes the producer and releases resources.
-	Close() error
-}
-
-// producer is the default implementation of Producer.
-type producer struct {
-	config ProducerConfig
-	codec  event.Encoder
-	// writer *kafkago.Writer // TODO: Add kafka-go writer
-}
+// Producer writes events to Kafka.
+//
+// TODO: Define struct with fields:
+// - writer *kafka.Writer
+// - codec  *event.JSONCodec  // Or however you named your codec
 
 // NewProducer creates a new Kafka producer.
-func NewProducer(config ProducerConfig, codec event.Encoder) (Producer, error) {
-	// TODO: Initialize kafka-go writer with config
-	return nil, nil // TODO
-}
+//
+// TODO: Implement:
+// 1. Create kafka.Writer with:
+//    - Addr: kafka.TCP(brokers...)
+//    - Topic: topic
+//    - Balancer: &kafka.Hash{}  // Partition by key
+// 2. Return producer
+// func NewProducer(brokers []string, topic string) *Producer
 
-// Publish sends a single event to Kafka.
-func (p *producer) Publish(ctx context.Context, evt *event.ReviewEvent) error {
-	// TODO: Encode event and write to Kafka
-	panic("TODO")
-}
+// Produce sends an event to Kafka.
+//
+// TODO: Implement:
+// 1. Encode event to JSON using codec
+// 2. Create kafka.Message{Key: []byte(event.Key), Value: jsonBytes}
+// 3. Call writer.WriteMessages(ctx, message)
+// func (p *Producer) Produce(ctx context.Context, evt *event.Event) error
 
-// PublishBatch sends multiple events to Kafka.
-func (p *producer) PublishBatch(ctx context.Context, events []*event.ReviewEvent) error {
-	// TODO: Encode events and write batch to Kafka
-	panic("TODO")
-}
-
-// Close closes the producer and releases resources.
-func (p *producer) Close() error {
-	// TODO: Close kafka-go writer
-	panic("TODO")
-}
-
+// Close closes the producer.
+//
+// TODO: Implement:
+// - Call p.writer.Close()
+// func (p *Producer) Close() error

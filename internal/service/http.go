@@ -1,77 +1,86 @@
-// Package service provides HTTP handlers for metrics and health checks.
+// Package service provides HTTP endpoints.
+//
+// YOUR TASK (Milestone 11):
+// Implement health check endpoints and metrics server.
 package service
 
-import (
-	"context"
-	"fmt"
-	"net/http"
+// TODO: Import:
+// - "context"
+// - "net/http"
+// - "github.com/prometheus/client_golang/prometheus/promhttp"
 
-	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"go.uber.org/zap"
+// Server provides HTTP endpoints for health and metrics.
+//
+// TODO: Define struct with fields:
+// - server  *http.Server
+// - db      *db.DB       // For readiness check
+// - ready   bool         // Are we ready for traffic?
 
-	"streamsre/internal/db"
-)
+// NewServer creates an HTTP server.
+//
+// TODO: Implement:
+// 1. Create http.ServeMux
+// 2. Register handlers:
+//    - mux.HandleFunc("/healthz", s.handleHealthz)
+//    - mux.HandleFunc("/readyz", s.handleReadyz)
+//    - mux.Handle("/metrics", promhttp.Handler())
+// 3. Create http.Server with mux
+// func NewServer(addr string, db *db.DB) *Server
 
-// HTTPServer provides HTTP endpoints for metrics and health checks.
-type HTTPServer struct {
-	server *http.Server
-	db     *db.DB
-	logger *zap.Logger
-	ready  bool
-}
+// Start starts the HTTP server in a goroutine.
+//
+// TODO: Implement:
+// - go s.server.ListenAndServe()
+// func (s *Server) Start() error
 
-// NewHTTPServer creates a new HTTP server for metrics and health.
-func NewHTTPServer(port int, database *db.DB, logger *zap.Logger) *HTTPServer {
-	s := &HTTPServer{
-		db:     database,
-		logger: logger,
-		ready:  false,
-	}
+// Shutdown gracefully shuts down the server.
+//
+// TODO: Implement:
+// - s.server.Shutdown(ctx)
+// func (s *Server) Shutdown(ctx context.Context) error
 
-	mux := http.NewServeMux()
-	mux.Handle("/metrics", promhttp.Handler())
-	mux.HandleFunc("/healthz", s.handleHealthz)
-	mux.HandleFunc("/readyz", s.handleReadyz)
+// SetReady marks the server as ready/not ready.
+// func (s *Server) SetReady(ready bool)
 
-	s.server = &http.Server{
-		Addr:    fmt.Sprintf(":%d", port),
-		Handler: mux,
-	}
+// handleHealthz handles liveness probes.
+//
+// LIVENESS: "Is the process alive?"
+// - Always return 200 if we're running
+// - Do NOT check dependencies (database, Kafka)
+// - If this fails, Kubernetes RESTARTS the container
+//
+// TODO: Implement:
+// - w.WriteHeader(http.StatusOK)
+// - w.Write([]byte(`{"status":"ok"}`))
+// func (s *Server) handleHealthz(w http.ResponseWriter, r *http.Request)
 
-	return s
-}
+// handleReadyz handles readiness probes.
+//
+// READINESS: "Can this instance handle traffic?"
+// - Check: Can we reach the database?
+// - Check: Are we ready to consume? (s.ready)
+// - If this fails, Kubernetes removes from load balancer (no traffic)
+//   but does NOT restart
+//
+// TODO: Implement:
+// 1. If !s.ready, return 503
+// 2. If s.db.Ping(ctx) fails, return 503
+// 3. Otherwise, return 200
+// func (s *Server) handleReadyz(w http.ResponseWriter, r *http.Request)
 
-// Start starts the HTTP server.
-func (s *HTTPServer) Start() error {
-	// TODO: Start server in background
-	// TODO: Log startup message
-	panic("TODO")
-}
-
-// Shutdown gracefully shuts down the HTTP server.
-func (s *HTTPServer) Shutdown(ctx context.Context) error {
-	// TODO: Shutdown server with context
-	panic("TODO")
-}
-
-// SetReady marks the server as ready to receive traffic.
-func (s *HTTPServer) SetReady(ready bool) {
-	s.ready = ready
-}
-
-// handleHealthz handles liveness probe requests.
-func (s *HTTPServer) handleHealthz(w http.ResponseWriter, r *http.Request) {
-	// TODO: Return 200 OK if server is alive
-	// Liveness just checks if the process is running
-	panic("TODO")
-}
-
-// handleReadyz handles readiness probe requests.
-func (s *HTTPServer) handleReadyz(w http.ResponseWriter, r *http.Request) {
-	// TODO: Check if server is ready to receive traffic
-	// - Check database connection
-	// - Check if consumer is ready
-	// Return 200 if ready, 503 if not
-	panic("TODO")
-}
-
+// WHY SEPARATE LIVENESS AND READINESS?
+//
+// Scenario: Database is down
+// - Liveness: 200 (process is fine!)
+// - Readiness: 503 (can't do work right now)
+// Result: Kubernetes stops sending traffic but doesn't restart.
+//         When DB recovers, readiness returns 200, traffic resumes.
+//
+// Scenario: Process deadlock
+// - Liveness: timeout/fail
+// - Readiness: also fails
+// Result: Kubernetes restarts the container.
+//
+// If liveness checked DB and DB was slow, Kubernetes would
+// keep restarting healthy containers! That's why liveness
+// should only check "is the process alive".

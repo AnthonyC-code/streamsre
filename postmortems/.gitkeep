@@ -1,0 +1,8 @@
+# Postmortems Directory
+
+Create postmortems here after running chaos drills.
+
+Naming convention: YYYY-MM-DD-short-title.md
+
+See SPEC.md for the postmortem template.
+

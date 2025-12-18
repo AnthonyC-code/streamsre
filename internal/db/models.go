@@ -1,51 +1,32 @@
 // Package db provides database model definitions.
+//
+// YOUR TASK (Milestone 3):
+// Define structs that map to your database tables.
 package db
 
-import (
-	"time"
-
-	"github.com/google/uuid"
-)
+// TODO: Import required packages:
+// - "time"
+// - "github.com/google/uuid"
 
 // Review represents a row in the reviews table.
-type Review struct {
-	// ReviewID is the primary key for the review.
-	ReviewID string `db:"review_id"`
-
-	// UserKey identifies the user who created the review.
-	UserKey string `db:"user_key"`
-
-	// Rating is the review rating (1-5).
-	Rating int `db:"rating"`
-
-	// Text is the review content.
-	Text string `db:"text"`
-
-	// CreatedAt is when the review was created.
-	CreatedAt time.Time `db:"created_at"`
-}
+//
+// TODO: Define struct with fields:
+// - ReviewID  string    // Primary key
+// - UserKey   string    // Who wrote it (from event Key)
+// - Rating    int       // 1-5
+// - Text      string    // Review content
+// - CreatedAt time.Time // When it was created
 
 // ProcessedEvent represents a row in the processed_events table.
-type ProcessedEvent struct {
-	// EventID is the unique identifier for the processed event.
-	EventID uuid.UUID `db:"event_id"`
+//
+// TODO: Define struct with fields:
+// - EventID     uuid.UUID
+// - ProcessedAt time.Time
 
-	// ProcessedAt is when the event was processed.
-	ProcessedAt time.Time `db:"processed_at"`
-}
-
-// DLQEventRecord represents a row in the dlq_events table.
-type DLQEventRecord struct {
-	// EventID is the unique identifier for the failed event.
-	EventID uuid.UUID `db:"event_id"`
-
-	// Reason describes why the event failed processing.
-	Reason string `db:"reason"`
-
-	// OriginalPayload is the raw JSON of the original event.
-	OriginalPayload []byte `db:"original_payload"`
-
-	// FailedAt is when the event was moved to the DLQ.
-	FailedAt time.Time `db:"failed_at"`
-}
-
+// DLQEvent represents a row in the dlq_events table.
+//
+// TODO: Define struct with fields:
+// - EventID         uuid.UUID
+// - Reason          string    // Why it failed
+// - OriginalPayload []byte    // Raw JSON for debugging
+// - FailedAt        time.Time

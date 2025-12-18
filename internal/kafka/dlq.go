@@ -1,45 +1,48 @@
-// Package kafka provides dead letter queue (DLQ) functionality.
+// Package kafka provides dead letter queue functionality.
+//
+// YOUR TASK (Milestone 8):
+// Implement DLQ for messages that can't be processed.
 package kafka
 
-import (
-	"context"
+// TODO: Import required packages
 
-	"streamsre/internal/event"
-)
+// DLQProducer sends failed messages to the dead letter queue.
+//
+// You have two options for DLQ:
+//
+// OPTION A: Kafka DLQ Topic
+// - Send failed messages to "events.dlq" topic
+// - Pro: Easy to replay by consuming DLQ topic
+// - Con: Need to manage another topic
+//
+// OPTION B: Database DLQ Table
+// - Insert into dlq_events table
+// - Pro: Simpler, can query with SQL
+// - Con: Mixing concerns (Kafka issues → DB)
+//
+// I recommend OPTION A for learning, but either works.
 
-// DLQProducer publishes failed events to the dead letter queue topic.
-type DLQProducer interface {
-	// SendToDLQ publishes a failed event to the DLQ topic.
-	SendToDLQ(ctx context.Context, evt *event.DLQEvent) error
+// TODO: Define struct with fields:
+// - writer *kafka.Writer  // Writes to DLQ topic
 
-	// Close closes the DLQ producer and releases resources.
-	Close() error
-}
+// NewDLQProducer creates a DLQ producer.
+//
+// TODO: Implement:
+// 1. Create kafka.Writer for topic "events.dlq" (or mainTopic + ".dlq")
+// 2. Return producer
+// func NewDLQProducer(brokers []string, dlqTopic string) *DLQProducer
 
-// dlqProducer is the default implementation of DLQProducer.
-type dlqProducer struct {
-	topic   string
-	brokers []string
-	// writer *kafkago.Writer // TODO: Add kafka-go writer
-}
+// SendToDLQ sends a failed message to the DLQ.
+//
+// TODO: Implement:
+// 1. Create a DLQ envelope with:
+//    - Original payload (raw bytes)
+//    - Reason for failure
+//    - Original event ID (if available)
+//    - Timestamp
+// 2. Encode as JSON
+// 3. Write to DLQ topic
+// func (p *DLQProducer) SendToDLQ(ctx context.Context, reason string, originalPayload []byte) error
 
-// NewDLQProducer creates a new DLQ producer.
-func NewDLQProducer(brokers []string, mainTopic string) (DLQProducer, error) {
-	dlqTopic := mainTopic + DLQTopicSuffix
-	_ = dlqTopic // TODO: Use this
-	// TODO: Initialize kafka-go writer for DLQ topic
-	return nil, nil // TODO
-}
-
-// SendToDLQ publishes a failed event to the DLQ topic.
-func (p *dlqProducer) SendToDLQ(ctx context.Context, evt *event.DLQEvent) error {
-	// TODO: Encode DLQ event and write to DLQ topic
-	panic("TODO")
-}
-
-// Close closes the DLQ producer and releases resources.
-func (p *dlqProducer) Close() error {
-	// TODO: Close kafka-go writer
-	panic("TODO")
-}
-
+// Close closes the DLQ producer.
+// func (p *DLQProducer) Close() error

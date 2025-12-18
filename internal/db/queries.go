@@ -1,72 +1,66 @@
-// Package db provides query functions for database operations.
+// Package db provides SQL query functions.
+//
+// YOUR TASK (Milestone 3):
+// Implement the database queries needed for event processing.
 package db
 
-import (
-	"context"
-
-	"github.com/google/uuid"
-)
+// TODO: Import required packages:
+// - "context"
+// - "github.com/google/uuid"
 
 // Queries provides database query operations.
-type Queries struct {
-	db *DB
-}
+//
+// TODO: Define struct with field:
+// - db *DB
 
 // NewQueries creates a new Queries instance.
-func NewQueries(db *DB) *Queries {
-	return &Queries{db: db}
-}
+// func NewQueries(db *DB) *Queries
 
-// IsEventProcessed checks if an event has already been processed (idempotency).
-func (q *Queries) IsEventProcessed(ctx context.Context, eventID uuid.UUID) (bool, error) {
-	// TODO: Query processed_events table for event_id
-	panic("TODO")
-}
+// IsEventProcessed checks if an event has already been processed.
+//
+// TODO: Implement:
+// 1. Query: SELECT 1 FROM processed_events WHERE event_id = $1
+// 2. If row exists, return true, nil
+// 3. If no row, return false, nil
+// 4. Handle pgx.ErrNoRows appropriately
+// func (q *Queries) IsEventProcessed(ctx context.Context, eventID uuid.UUID) (bool, error)
 
-// MarkEventProcessed marks an event as processed.
-func (q *Queries) MarkEventProcessed(ctx context.Context, eventID uuid.UUID) error {
-	// TODO: Insert into processed_events table
-	panic("TODO")
-}
+// MarkEventProcessed records that an event has been processed.
+//
+// TODO: Implement:
+// - Query: INSERT INTO processed_events (event_id) VALUES ($1)
+// func (q *Queries) MarkEventProcessed(ctx context.Context, eventID uuid.UUID) error
 
-// InsertReview inserts a new review into the reviews table.
-func (q *Queries) InsertReview(ctx context.Context, review *Review) error {
-	// TODO: Insert into reviews table
-	panic("TODO")
-}
+// InsertReview inserts a new review into the database.
+//
+// TODO: Implement:
+// - Query: INSERT INTO reviews (review_id, user_key, rating, text, created_at) VALUES ($1, $2, $3, $4, $5)
+// func (q *Queries) InsertReview(ctx context.Context, r *Review) error
 
-// GetReview retrieves a review by its ID.
-func (q *Queries) GetReview(ctx context.Context, reviewID string) (*Review, error) {
-	// TODO: Select from reviews table
-	panic("TODO")
-}
+// InsertDLQEvent records a failed event in the DLQ table.
+//
+// TODO: Implement:
+// - Query: INSERT INTO dlq_events (event_id, reason, original_payload) VALUES ($1, $2, $3)
+// func (q *Queries) InsertDLQEvent(ctx context.Context, eventID uuid.UUID, reason string, payload []byte) error
 
-// InsertDLQEvent inserts a failed event into the DLQ table.
-func (q *Queries) InsertDLQEvent(ctx context.Context, dlqEvent *DLQEventRecord) error {
-	// TODO: Insert into dlq_events table
-	panic("TODO")
-}
-
-// GetDLQEvents retrieves DLQ events, optionally filtered.
-func (q *Queries) GetDLQEvents(ctx context.Context, limit int) ([]*DLQEventRecord, error) {
-	// TODO: Select from dlq_events table
-	panic("TODO")
-}
-
-// DeleteDLQEvent removes a DLQ event (after successful reprocessing).
-func (q *Queries) DeleteDLQEvent(ctx context.Context, eventID uuid.UUID) error {
-	// TODO: Delete from dlq_events table
-	panic("TODO")
-}
-
-// ProcessEventTransaction handles the full event processing in a transaction.
-// It checks idempotency, inserts the review, and marks the event as processed.
-func (q *Queries) ProcessEventTransaction(ctx context.Context, eventID uuid.UUID, review *Review) error {
-	// TODO: Begin transaction
-	// TODO: Check if event already processed
-	// TODO: Insert review
-	// TODO: Mark event as processed
-	// TODO: Commit transaction
-	panic("TODO")
-}
-
+// ProcessEventTx handles event processing in a SINGLE TRANSACTION.
+//
+// THIS IS THE MOST IMPORTANT FUNCTION - IT ENSURES EXACTLY-ONCE SEMANTICS!
+//
+// TODO: Implement:
+// 1. Begin transaction: tx, err := db.pool.Begin(ctx)
+// 2. defer tx.Rollback(ctx)  // Always rollback if not committed
+// 3. Check if event already processed:
+//    - SELECT 1 FROM processed_events WHERE event_id = $1
+//    - If exists: return nil (already done, skip!)
+// 4. Insert the review:
+//    - INSERT INTO reviews (...) VALUES (...)
+// 5. Mark event as processed:
+//    - INSERT INTO processed_events (event_id) VALUES ($1)
+// 6. Commit: return tx.Commit(ctx)
+//
+// WHY TRANSACTIONAL?
+// If you insert review but crash before marking processed,
+// on restart you'd insert the review AGAIN (duplicate!).
+// The transaction ensures both happen or neither happens.
+// func (q *Queries) ProcessEventTx(ctx context.Context, eventID uuid.UUID, r *Review) error

@@ -1,98 +1,73 @@
 // Package kafka provides Kafka consumer functionality.
+//
+// YOUR TASK (Milestone 5):
+// Implement a Kafka consumer with consumer group support.
 package kafka
 
-import (
-	"context"
+// TODO: Import required packages:
+// - "context"
+// - "github.com/segmentio/kafka-go"
+// - "streamsre/internal/event"
 
-	"streamsre/internal/event"
-)
+// Message wraps a Kafka message with decoded event.
+//
+// TODO: Define struct with fields:
+// - Event     *event.Event   // Decoded event (nil if decode failed)
+// - Raw       []byte         // Original bytes (for DLQ)
+// - Partition int
+// - Offset    int64
+// - Key       []byte
 
-// ConsumerConfig holds configuration for the Kafka consumer.
-type ConsumerConfig struct {
-	// Brokers is the list of Kafka broker addresses.
-	Brokers []string
-
-	// Topic is the topic to consume messages from.
-	Topic string
-
-	// GroupID is the consumer group ID.
-	GroupID string
-
-	// MinBytes is the minimum number of bytes to fetch per request.
-	MinBytes int
-
-	// MaxBytes is the maximum number of bytes to fetch per request.
-	MaxBytes int
-
-	// CommitInterval is the interval at which to commit offsets.
-	CommitIntervalMs int
-}
-
-// Message represents a consumed Kafka message.
-type Message struct {
-	// Event is the decoded review event.
-	Event *event.ReviewEvent
-
-	// Partition is the partition the message was read from.
-	Partition int
-
-	// Offset is the offset of the message in the partition.
-	Offset int64
-
-	// Key is the message key.
-	Key []byte
-
-	// Raw is the raw message bytes.
-	Raw []byte
-}
-
-// MessageHandler is a function that processes a consumed message.
+// MessageHandler processes a single message.
+// Return nil to commit, return error to retry/DLQ.
 type MessageHandler func(ctx context.Context, msg *Message) error
 
 // Consumer reads events from Kafka.
-type Consumer interface {
-	// Consume starts consuming messages and calls the handler for each message.
-	// This method blocks until the context is cancelled.
-	Consume(ctx context.Context, handler MessageHandler) error
+//
+// TODO: Define struct with fields:
+// - reader *kafka.Reader
+// - codec  *event.JSONCodec
 
-	// CommitMessage commits the offset for the given message.
-	CommitMessage(ctx context.Context, msg *Message) error
+// NewConsumer creates a new Kafka consumer with consumer group.
+//
+// TODO: Implement:
+// 1. Create kafka.Reader with:
+//    - Brokers: brokers
+//    - GroupID: groupID      // THIS ENABLES CONSUMER GROUPS!
+//    - Topic: topic
+//    - MinBytes: 1
+//    - MaxBytes: 10e6        // 10MB
+// 2. Return consumer
+//
+// IMPORTANT: GroupID is what makes this a "consumer group consumer".
+// Multiple consumers with same GroupID share partitions.
+// Each partition goes to exactly ONE consumer in the group.
+// func NewConsumer(brokers []string, topic, groupID string) *Consumer
 
-	// Close closes the consumer and releases resources.
-	Close() error
-}
+// Consume reads messages in a loop and calls handler for each.
+//
+// TODO: Implement:
+// 1. Loop forever (until ctx cancelled):
+//    - msg, err := reader.ReadMessage(ctx)
+//    - Decode message value into Event
+//    - Call handler(ctx, &Message{...})
+//    - If handler returns nil, commit the message
+//    - If handler returns error, DON'T commit (will be redelivered)
+//
+// COMMIT STRATEGY:
+// - Commit AFTER processing, not before!
+// - If we crash after processing but before commit, message replays
+// - That's okay because we have idempotency in the database
+// func (c *Consumer) Consume(ctx context.Context, handler MessageHandler) error
 
-// consumer is the default implementation of Consumer.
-type consumer struct {
-	config ConsumerConfig
-	codec  event.Decoder
-	// reader *kafkago.Reader // TODO: Add kafka-go reader
-}
+// CommitMessage commits the offset for a message.
+//
+// TODO: Implement:
+// - Call reader.CommitMessages(ctx, kafka.Message{...})
+// func (c *Consumer) CommitMessage(ctx context.Context, msg *Message) error
 
-// NewConsumer creates a new Kafka consumer.
-func NewConsumer(config ConsumerConfig, codec event.Decoder) (Consumer, error) {
-	// TODO: Initialize kafka-go reader with config
-	return nil, nil // TODO
-}
-
-// Consume starts consuming messages and calls the handler for each message.
-func (c *consumer) Consume(ctx context.Context, handler MessageHandler) error {
-	// TODO: Read messages from Kafka in a loop
-	// - Decode each message
-	// - Call handler
-	// - Handle errors and commit offsets
-	panic("TODO")
-}
-
-// CommitMessage commits the offset for the given message.
-func (c *consumer) CommitMessage(ctx context.Context, msg *Message) error {
-	// TODO: Commit offset for message
-	panic("TODO")
-}
-
-// Close closes the consumer and releases resources.
-func (c *consumer) Close() error {
-	// TODO: Close kafka-go reader
-	panic("TODO")
-}
-
+// Close closes the consumer.
+//
+// TODO: Implement:
+// - Call reader.Close()
+// func (c *Consumer) Close() error

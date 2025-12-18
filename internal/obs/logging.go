@@ -1,47 +1,42 @@
-// Package obs provides logging utilities using zap.
+// Package obs provides structured logging using zap.
+//
+// YOUR TASK (Milestone 2):
+// Set up structured JSON logging.
 package obs
 
-import (
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
-)
+// TODO: Import "go.uber.org/zap"
 
-// NewLogger creates a new zap logger with the specified level.
-// Valid levels: debug, info, warn, error
-func NewLogger(level string) (*zap.Logger, error) {
-	var zapLevel zapcore.Level
-	switch level {
-	case "debug":
-		zapLevel = zapcore.DebugLevel
-	case "info":
-		zapLevel = zapcore.InfoLevel
-	case "warn":
-		zapLevel = zapcore.WarnLevel
-	case "error":
-		zapLevel = zapcore.ErrorLevel
-	default:
-		zapLevel = zapcore.InfoLevel
-	}
+// NewLogger creates a production JSON logger.
+//
+// TODO: Implement:
+// 1. Use zap.NewProduction() for JSON output
+// 2. Or customize with zap.Config if you want
+// func NewLogger() (*zap.Logger, error)
 
-	config := zap.Config{
-		Level:            zap.NewAtomicLevelAt(zapLevel),
-		Development:      false,
-		Encoding:         "json",
-		EncoderConfig:    zap.NewProductionEncoderConfig(),
-		OutputPaths:      []string{"stdout"},
-		ErrorOutputPaths: []string{"stderr"},
-	}
+// NewDevelopmentLogger creates a human-readable logger for local dev.
+//
+// TODO: Implement:
+// - Use zap.NewDevelopment()
+// func NewDevelopmentLogger() (*zap.Logger, error)
 
-	return config.Build()
-}
-
-// NewDevelopmentLogger creates a logger suitable for development.
-func NewDevelopmentLogger() (*zap.Logger, error) {
-	return zap.NewDevelopment()
-}
-
-// WithComponent adds a component field to the logger.
-func WithComponent(logger *zap.Logger, component string) *zap.Logger {
-	return logger.With(zap.String("component", component))
-}
-
+// STRUCTURED LOGGING BEST PRACTICES:
+//
+// DO include in every log:
+//   - event_id (for tracing a specific event)
+//   - partition, offset (Kafka position)
+//   - latency_ms (how long it took)
+//   - result (success, fail, dlq)
+//
+// Example:
+//   logger.Info("event processed",
+//       zap.String("event_id", evt.EventID.String()),
+//       zap.Int("partition", msg.Partition),
+//       zap.Int64("offset", msg.Offset),
+//       zap.Duration("latency", time.Since(start)),
+//       zap.String("result", "success"),
+//   )
+//
+// DON'T log:
+//   - Sensitive data (passwords, tokens)
+//   - High-frequency noise (every iteration of a loop)
+//   - Entire payloads (can be huge)

@@ -1,51 +1,45 @@
 #!/bin/bash
 # seed_topics.sh - Create Kafka topics for the StreamSRE project
 #
-# This script creates the required topics in Redpanda/Kafka.
-# Run after starting the infrastructure with `make up`.
+# Run this after starting infrastructure with `make up`.
+# This is the ONLY script you should run as-is (it creates necessary topics).
 
 set -euo pipefail
 
 echo "=== StreamSRE Topic Seeding ==="
 echo ""
 
-# TODO: Configuration - update these as needed
 REDPANDA_CONTAINER="streamsre-redpanda"
-MAIN_TOPIC="reviews"
-DLQ_TOPIC="reviews.dlq"
-PARTITIONS=3
+MAIN_TOPIC="events.main"
+DLQ_TOPIC="events.dlq"
+PARTITIONS=6
 REPLICATION_FACTOR=1
 
-echo "Creating topics in Redpanda..."
+echo "Waiting for Redpanda to be ready..."
+until docker exec $REDPANDA_CONTAINER rpk cluster health 2>/dev/null | grep -q "Healthy"; do
+    echo "  Redpanda not ready yet, waiting..."
+    sleep 2
+done
+echo "Redpanda is ready!"
 echo ""
 
-# TODO: Create main topic
-echo "Creating topic: $MAIN_TOPIC"
-# docker exec $REDPANDA_CONTAINER rpk topic create $MAIN_TOPIC \
-#   --partitions $PARTITIONS \
-#   --replicas $REPLICATION_FACTOR
+echo "Creating topic: $MAIN_TOPIC with $PARTITIONS partitions..."
+docker exec $REDPANDA_CONTAINER rpk topic create $MAIN_TOPIC \
+    --partitions $PARTITIONS \
+    --replicas $REPLICATION_FACTOR \
+    2>/dev/null || echo "  (Topic may already exist)"
 
-echo "TODO: Implement topic creation"
-echo "  rpk topic create $MAIN_TOPIC --partitions $PARTITIONS --replicas $REPLICATION_FACTOR"
+echo "Creating topic: $DLQ_TOPIC..."
+docker exec $REDPANDA_CONTAINER rpk topic create $DLQ_TOPIC \
+    --partitions 1 \
+    --replicas $REPLICATION_FACTOR \
+    2>/dev/null || echo "  (Topic may already exist)"
+
 echo ""
+echo "Listing topics:"
+docker exec $REDPANDA_CONTAINER rpk topic list
 
-# TODO: Create DLQ topic
-echo "Creating topic: $DLQ_TOPIC"
-# docker exec $REDPANDA_CONTAINER rpk topic create $DLQ_TOPIC \
-#   --partitions $PARTITIONS \
-#   --replicas $REPLICATION_FACTOR
-
-echo "TODO: Implement DLQ topic creation"
-echo "  rpk topic create $DLQ_TOPIC --partitions $PARTITIONS --replicas $REPLICATION_FACTOR"
 echo ""
-
-# TODO: List topics to verify
-echo "Listing topics..."
-# docker exec $REDPANDA_CONTAINER rpk topic list
-
-echo "TODO: Implement topic listing"
-echo "  rpk topic list"
-echo ""
-
 echo "=== Topic seeding complete ==="
-
+echo ""
+echo "You can now run the producer and consumer."

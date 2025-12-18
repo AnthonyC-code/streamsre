@@ -1,95 +1,75 @@
-// Package obs provides observability utilities including metrics and logging.
-// Metrics are exposed in Prometheus format for scraping.
+// Package obs provides observability: metrics and logging.
+//
+// YOUR TASK (Milestone 9):
+// Implement Prometheus metrics for the consumer.
 package obs
 
-import (
-	"github.com/prometheus/client_golang/prometheus"
-)
+// TODO: Import required packages:
+// - "github.com/prometheus/client_golang/prometheus"
 
-// Metrics holds all application metrics.
-type Metrics struct {
-	// EventsConsumed counts the total number of events consumed.
-	EventsConsumed prometheus.Counter
+// Metrics holds all Prometheus metrics for the application.
+//
+// TODO: Define struct with these metrics:
+//
+// COUNTERS (things that only go up):
+// - EventsConsumed     prometheus.Counter      // Messages pulled from Kafka
+// - EventsProcessed    *prometheus.CounterVec  // Labeled by result: success, fail, dlq
+// - RetriesTotal       prometheus.Counter      // Number of retry attempts
+//
+// HISTOGRAMS (distributions - latency, etc.):
+// - ProcessingDuration prometheus.Histogram    // How long each event takes
+// - DBQueryDuration    *prometheus.HistogramVec // DB latency by query type
+//
+// GAUGES (values that go up and down):
+// - InflightWorkers    prometheus.Gauge        // Current active goroutines
+// - ConsumerLag        *prometheus.GaugeVec    // Lag per partition
 
-	// EventsProcessed counts the total number of events successfully processed.
-	EventsProcessed prometheus.Counter
+// NewMetrics creates and registers all metrics.
+//
+// TODO: Implement:
+// 1. Create each metric using prometheus.New*()
+// 2. Register with prometheus.MustRegister()
+// 3. Return &Metrics{...}
+//
+// Example:
+//   eventsConsumed := prometheus.NewCounter(prometheus.CounterOpts{
+//       Name: "streamsre_events_consumed_total",
+//       Help: "Total number of events consumed from Kafka",
+//   })
+//   prometheus.MustRegister(eventsConsumed)
+//
+// For labeled metrics (CounterVec, GaugeVec):
+//   eventsProcessed := prometheus.NewCounterVec(prometheus.CounterOpts{
+//       Name: "streamsre_events_processed_total",
+//       Help: "Total events processed, by result",
+//   }, []string{"result"})  // Labels
+//   prometheus.MustRegister(eventsProcessed)
+//
+// func NewMetrics() *Metrics
 
-	// EventsFailed counts the total number of events that failed processing.
-	EventsFailed prometheus.Counter
+// Recording methods:
+//
+// TODO: Implement helper methods like:
+// - m.RecordEventConsumed()
+// - m.RecordEventProcessed(result string)  // "success", "fail", "dlq"
+// - m.RecordProcessingDuration(seconds float64)
+// - m.SetInflightWorkers(count int)
+// - m.SetConsumerLag(partition int, lag int64)
 
-	// EventsDLQ counts the total number of events sent to the DLQ.
-	EventsDLQ prometheus.Counter
-
-	// ProcessingDuration tracks the duration of event processing.
-	ProcessingDuration prometheus.Histogram
-
-	// DBQueryDuration tracks the duration of database queries.
-	DBQueryDuration *prometheus.HistogramVec
-
-	// KafkaLag tracks the consumer lag per partition.
-	KafkaLag *prometheus.GaugeVec
-
-	// RetryCount counts retries per event processing.
-	RetryCount prometheus.Counter
-}
-
-// NewMetrics creates and registers all application metrics.
-func NewMetrics(registry prometheus.Registerer) *Metrics {
-	// TODO: Create and register all metrics
-	// TODO: Return populated Metrics struct
-	panic("TODO")
-}
-
-// DefaultMetrics creates metrics with the default Prometheus registry.
-func DefaultMetrics() *Metrics {
-	return NewMetrics(prometheus.DefaultRegisterer)
-}
-
-// RecordEventConsumed increments the events consumed counter.
-func (m *Metrics) RecordEventConsumed() {
-	// TODO: Increment counter
-	panic("TODO")
-}
-
-// RecordEventProcessed increments the events processed counter.
-func (m *Metrics) RecordEventProcessed() {
-	// TODO: Increment counter
-	panic("TODO")
-}
-
-// RecordEventFailed increments the events failed counter.
-func (m *Metrics) RecordEventFailed() {
-	// TODO: Increment counter
-	panic("TODO")
-}
-
-// RecordEventDLQ increments the DLQ counter.
-func (m *Metrics) RecordEventDLQ() {
-	// TODO: Increment counter
-	panic("TODO")
-}
-
-// RecordProcessingDuration records the duration of event processing.
-func (m *Metrics) RecordProcessingDuration(seconds float64) {
-	// TODO: Observe histogram
-	panic("TODO")
-}
-
-// RecordDBQueryDuration records the duration of a database query.
-func (m *Metrics) RecordDBQueryDuration(queryName string, seconds float64) {
-	// TODO: Observe histogram with label
-	panic("TODO")
-}
-
-// SetKafkaLag sets the current lag for a partition.
-func (m *Metrics) SetKafkaLag(partition string, lag float64) {
-	// TODO: Set gauge with label
-	panic("TODO")
-}
-
-// RecordRetry increments the retry counter.
-func (m *Metrics) RecordRetry() {
-	// TODO: Increment counter
-	panic("TODO")
-}
-
+// PROMETHEUS METRIC TYPES EXPLAINED:
+//
+// Counter: Only goes up. Reset when process restarts.
+//   Use for: requests, events, errors
+//   Query with: rate(metric_name[5m]) to get per-second rate
+//
+// Gauge: Goes up and down.
+//   Use for: current queue size, active connections, temperature
+//   Query with: metric_name (current value)
+//
+// Histogram: Distribution of values, pre-aggregated into buckets.
+//   Use for: latency, request size
+//   Query with: histogram_quantile(0.95, rate(metric_name_bucket[5m]))
+//
+// Labels: Add dimensions to metrics.
+//   Good: {result="success"}, {method="GET"}, {status="200"}
+//   Bad: {user_id="..."} - Too many unique values (high cardinality)!
